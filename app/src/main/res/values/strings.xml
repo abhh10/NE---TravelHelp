@@ -1,0 +1,115 @@
+<resources>
+    <string name="app_name">NE Travel Help</string>
+    <string name="app_subtitle">Your Safety Companion</string>
+    
+    <!-- Login Screen -->
+    <string name="welcome_title">Welcome Back!</string>
+    <string name="welcome_subtitle">Your safety is our priority</string>
+    <string name="login_username">Username</string>
+    <string name="login_password">Password</string>
+    <string name="login_continue">Continue</string>
+    <string name="login_show_password">Show password</string>
+    <string name="login_hide_password">Hide password</string>
+    
+    <!-- Home Screen -->
+    <string name="home_quick_actions">Quick Actions</string>
+    <string name="home_sos">SOS</string>
+    <string name="home_safety">Safety</string>
+    <string name="home_profile">Profile</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_recent_activity">Recent Activity</string>
+    <string name="home_no_activity">No recent activity</string>
+    <string name="home_activity_hint">Your safety activities will appear here</string>
+    
+    <!-- Safety Features -->
+    <string name="safety_title">Safety Features</string>
+    <string name="safety_sos_title">Emergency SOS</string>
+    <string name="safety_sos_desc">Send immediate help request with your location</string>
+    <string name="safety_geofence_title">Geo-fencing Alerts</string>
+    <string name="safety_geofence_desc">Get notified when entering high-risk areas</string>
+    <string name="safety_tracking_title">Real-time Tracking</string>
+    <string name="safety_tracking_desc">Share your location with trusted contacts</string>
+    <string name="safety_tips_title">Safety Tips</string>
+    <string name="safety_tips_desc">Learn how to stay safe while traveling</string>
+    
+    <!-- Profile Screen -->
+    <string name="profile_title">Profile</string>
+    <string name="profile_user_name">Tourist User</string>
+    <string name="profile_safety_id">Safety ID: #%1$s</string>
+    <string name="profile_digital_id">Digital ID</string>
+    <string name="profile_digital_id_desc">Manage your tourist identification</string>
+    <string name="profile_emergency_contacts">Emergency Contacts</string>
+    <string name="profile_emergency_contacts_desc">Add trusted contacts for emergencies</string>
+    <string name="profile_travel_history">Travel History</string>
+    <string name="profile_travel_history_desc">View your safety activity log</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_privacy_security">Privacy &amp; Security</string>
+    <string name="settings_location_services">Location Services</string>
+    <string name="settings_location_services_desc">Enable location tracking for safety</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_desc">Receive safety alerts and updates</string>
+    <string name="settings_data_sharing">Data Sharing</string>
+    <string name="settings_data_sharing_desc">Control how your data is shared</string>
+    <string name="settings_app_preferences">App Preferences</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_desc">Choose your preferred language</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_desc">Light or dark mode</string>
+    <string name="settings_units">Units</string>
+    <string name="settings_units_desc">Metric or imperial measurements</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_version_value">1.0.0</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_privacy_policy_desc">View our privacy policy</string>
+    <string name="settings_terms">Terms of Service</string>
+    <string name="settings_terms_desc">View terms and conditions</string>
+    
+    <!-- Help Screen -->
+    <string name="help_title">Help &amp; Support</string>
+    <string name="help_getting_started">Getting Started</string>
+    <string name="help_create_digital_id">How to create a Digital ID</string>
+    <string name="help_emergency_contacts">Setting up emergency contacts</string>
+    <string name="help_safety_scores">Understanding safety scores</string>
+    <string name="help_safety_features">Safety Features</string>
+    <string name="help_sos_button">Using the SOS button</string>
+    <string name="help_geofencing">Geo-fencing alerts</string>
+    <string name="help_real_time_tracking">Real-time tracking</string>
+    <string name="help_troubleshooting">Troubleshooting</string>
+    <string name="help_location_not_updating">Location not updating</string>
+    <string name="help_notifications_not_working">Notifications not working</string>
+    <string name="help_app_crashes">App crashes or freezes</string>
+    <string name="help_need_more_help">Need More Help?</string>
+    <string name="help_contact_support_desc">Contact our support team for assistance</string>
+    <string name="help_contact_support">Contact Support</string>
+    
+    <!-- Safety Score -->
+    <string name="safety_score_title">Safety Score</string>
+    <string name="safety_score_value">%1$d/100</string>
+    <string name="safety_score_high_risk">You are in a high-risk zone</string>
+    <string name="safety_score_safe">You are in a safe area</string>
+    <string name="safety_score_last_updated">Last updated: %1$s</string>
+    <string name="safety_score_just_now">Just now</string>
+    <string name="safety_score_minutes_ago">%1$d minutes ago</string>
+    <string name="safety_score_hours_ago">%1$d hours ago</string>
+    
+    <!-- Permissions -->
+    <string name="permission_notification_title">Notification Permission Required</string>
+    <string name="permission_notification_desc">Please enable notifications to receive safety alerts and emergency updates.</string>
+    <string name="permission_open_settings">Open Settings</string>
+    <string name="permission_later">Later</string>
+    <string name="permission_location_denied">Location permission is required for safety features</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_safety">Safety</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_help">Help</string>
+    
+    <!-- Legacy strings for compatibility -->
+    <string name="google_form_url"></string>
+    <string name="google_maps_key">YOUR_MAPS_API_KEY</string>
+</resources>
