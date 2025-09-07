@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.ne_travelhelp.ui.theme.NETravelHelpTheme
 import com.google.android.gms.location.*
+import android.speech.RecognizerIntent
+import androidx.compose.runtime.saveable.rememberSaveable
 
 class MainActivity : ComponentActivity() {
     private lateinit var sharedPrefs: SharedPreferences
@@ -130,6 +132,7 @@ fun TravelHelpApp(
         val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         val notificationGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] == true
+        val audioGranted = permissions[Manifest.permission.RECORD_AUDIO] == true
         
         if (locationGranted) {
             onLocationPermissionGranted()
@@ -154,7 +157,8 @@ fun TravelHelpApp(
             permissionLauncher.launch(arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.POST_NOTIFICATIONS
+                Manifest.permission.POST_NOTIFICATIONS,
+                Manifest.permission.RECORD_AUDIO
             ))
         }
     }
@@ -340,9 +344,24 @@ fun HomeScreen(
     sharedPrefs: SharedPreferences,
     onNavigateTo: (String) -> Unit
 ) {
-    val lastLat by remember { mutableStateOf(sharedPrefs.getFloat("last_lat", 0f)) }
-    val lastLng by remember { mutableStateOf(sharedPrefs.getFloat("last_lng", 0f)) }
-    val lastLocationTime by remember { mutableStateOf(sharedPrefs.getLong("last_location_time", 0L)) }
+    var lastLat by rememberSaveable { mutableStateOf(sharedPrefs.getFloat("last_lat", 0f)) }
+    var lastLng by rememberSaveable { mutableStateOf(sharedPrefs.getFloat("last_lng", 0f)) }
+    var lastLocationTime by rememberSaveable { mutableStateOf(sharedPrefs.getLong("last_location_time", 0L)) }
+
+    // Simple anomaly detection scaffold: inactivity and sudden jump
+    var lastUpdateMs by rememberSaveable { mutableStateOf(lastLocationTime) }
+    var lastAnomaly by rememberSaveable { mutableStateOf<String?>(null) }
+    var showSosDialog by rememberSaveable { mutableStateOf(false) }
+    var showAiDialog by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(lastLocationTime) {
+        val now = System.currentTimeMillis()
+        val minutes = (now - lastLocationTime) / (1000 * 60)
+        if (lastLocationTime > 0 && minutes >= 30) {
+            lastAnomaly = "Prolonged inactivity detected"
+        }
+        // Sudden jump heuristic (mock): if coords changed a lot (no previous location stored here)
+        // This can be replaced by your AI model output via a repository
+    }
     
     val safetyScore = remember(lastLat, lastLng) { 
         calculateSafetyScore(lastLat.toDouble(), lastLng.toDouble()) 
@@ -409,7 +428,7 @@ fun HomeScreen(
                     title = "SOS",
                     icon = Icons.Default.Emergency,
                     color = MaterialTheme.colorScheme.error,
-                    onClick = { /* Handle SOS */ }
+                    onClick = { showSosDialog = true }
                 )
                 QuickActionCard(
                     title = "Safety",
@@ -432,13 +451,73 @@ fun HomeScreen(
                     onClick = { onNavigateTo("profile") }
                 )
                 QuickActionCard(
-                    title = "Settings",
-                    icon = Icons.Default.Settings,
+                    title = "AI",
+                    icon = Icons.Default.Lightbulb,
                     color = MaterialTheme.colorScheme.tertiary,
-                    onClick = { onNavigateTo("settings") }
+                    onClick = { showAiDialog = true }
                 )
             }
         }
+
+        item {
+            if (lastAnomaly != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Anomaly Detected", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(lastAnomaly!!, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+                    }
+                }
+            }
+        }
+    }
+
+    if (showSosDialog) {
+        AlertDialog(
+            onDismissRequest = { showSosDialog = false },
+            title = { Text(stringResource(id = R.string.dialog_sos_title)) },
+            text = { Text(stringResource(id = R.string.dialog_sos_message)) },
+            confirmButton = {
+                TextButton(onClick = { showSosDialog = false }) {
+                    Text(stringResource(id = R.string.action_send))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSosDialog = false }) {
+                    Text(stringResource(id = R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (showAiDialog) {
+        val suggestions = remember(lastAnomaly, lastLat, lastLng) {
+            generateAiSuggestions(
+                anomaly = lastAnomaly,
+                latitude = lastLat.toDouble(),
+                longitude = lastLng.toDouble()
+            )
+        }
+        AlertDialog(
+            onDismissRequest = { showAiDialog = false },
+            title = { Text(stringResource(id = R.string.ai_suggestions_title)) },
+            text = {
+                Column {
+                    suggestions.forEach { line ->
+                        Text("• $line", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(6.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAiDialog = false }) {
+                    Text(stringResource(id = R.string.action_close))
+                }
+            }
+        )
     }
 }
 
@@ -795,8 +874,25 @@ fun ProfileOptionCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(sharedPrefs: SharedPreferences) {
+    val context = LocalContext.current
+    var selectedLanguage by rememberSaveable { mutableStateOf(sharedPrefs.getString("pref_lang", "en") ?: "en") }
+    val languages = listOf(
+        "en" to "English",
+        "hi" to "Hindi",
+        "bn" to "Bengali",
+        "ta" to "Tamil",
+        "te" to "Telugu",
+        "mr" to "Marathi",
+        "gu" to "Gujarati",
+        "pa" to "Punjabi",
+        "ml" to "Malayalam",
+        "kn" to "Kannada",
+        "or" to "Odia"
+    )
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -831,6 +927,48 @@ fun SettingsScreen(sharedPrefs: SharedPreferences) {
                     "Units" to "Metric or imperial measurements"
                 )
             )
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Language", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    var expanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = languages.firstOrNull { it.first == selectedLanguage }?.second ?: "English",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            languages.forEach { (code, name) ->
+                                DropdownMenuItem(
+                                    text = { Text(name) },
+                                    onClick = {
+                                        selectedLanguage = code
+                                        sharedPrefs.edit().putString("pref_lang", code).apply()
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         item {
@@ -1066,6 +1204,30 @@ private fun formatTime(timestamp: Long): String {
         minutes < 60 -> "$minutes minutes ago"
         else -> "${minutes / 60} hours ago"
     }
+}
+
+// Mock AI suggestion generator. Replace with real model integration.
+private fun generateAiSuggestions(anomaly: String?, latitude: Double, longitude: Double): List<String> {
+    val list = mutableListOf<String>()
+    if (anomaly != null) {
+        list += "We detected: $anomaly"
+        when {
+            anomaly.contains("inactivity", ignoreCase = true) -> {
+                list += "Consider taking a short break at a nearby safe spot."
+                list += "Notify a trusted contact if you feel unwell."
+            }
+            anomaly.contains("deviat", ignoreCase = true) -> {
+                list += "You seem off your planned route. Would you like safer alternatives?"
+                list += "Opening map to guide you back to the main route."
+            }
+        }
+    } else {
+        list += "All normal. Explore nearby attractions safely."
+    }
+    list += "Nearest help center is approx 1.2 km from your location."
+    val mapsLink = "https://maps.google.com/?q=$latitude,$longitude"
+    list += "Open map: $mapsLink"
+    return list
 }
 
 @Preview(showBackground = true)

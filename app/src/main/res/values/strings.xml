@@ -112,4 +112,11 @@
     <!-- Legacy strings for compatibility -->
     <string name="google_form_url"></string>
     <string name="google_maps_key">YOUR_MAPS_API_KEY</string>
+    <!-- Dialogs / AI -->
+    <string name="dialog_sos_title">Send SOS?</string>
+    <string name="dialog_sos_message">We will share your location with your trusted contacts and authorities.</string>
+    <string name="action_send">Send</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="ai_suggestions_title">AI Suggestions</string>
+    <string name="action_close">Close</string>
 </resources>
