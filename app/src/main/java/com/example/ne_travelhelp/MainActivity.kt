@@ -18,6 +18,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -37,6 +39,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -171,7 +175,11 @@ fun TravelHelpApp(
             }
         )
     } else {
+        val snackbarHostState = remember { SnackbarHostState() }
+        val haptics = LocalHapticFeedback.current
+        var showGlobalSosDialog by rememberSaveable { mutableStateOf(false) }
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -193,20 +201,50 @@ fun TravelHelpApp(
                         )
                     }
                 }
+            },
+            floatingActionButton = {
+                ExtendedFloatingActionButton(
+                    onClick = { showGlobalSosDialog = true },
+                    icon = { Icon(Icons.Filled.Emergency, contentDescription = null) },
+                    text = { Text(stringResource(id = R.string.action_sos)) }
+                )
             }
         ) { paddingValues ->
             Box(modifier = Modifier.padding(paddingValues)) {
                 when (currentScreen) {
                     "home" -> HomeScreen(
                         sharedPrefs = sharedPrefs,
-                        onNavigateTo = { currentScreen = it }
+                        onNavigateTo = { currentScreen = it },
+                        snackbarHostState = snackbarHostState
                     )
                     "safety" -> SafetyScreen(sharedPrefs = sharedPrefs)
+                    "map" -> MapScreen()
                     "profile" -> ProfileScreen(sharedPrefs = sharedPrefs)
                     "settings" -> SettingsScreen(sharedPrefs = sharedPrefs)
                     "help" -> HelpScreen()
                 }
             }
+        }
+
+        if (showGlobalSosDialog) {
+            AlertDialog(
+                onDismissRequest = { showGlobalSosDialog = false },
+                title = { Text(stringResource(id = R.string.dialog_sos_title)) },
+                text = { Text(stringResource(id = R.string.dialog_sos_message)) },
+                confirmButton = {
+                    TextButton(onClick = { 
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        showGlobalSosDialog = false 
+                    }) {
+                        Text(stringResource(id = R.string.action_send))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showGlobalSosDialog = false }) {
+                        Text(stringResource(id = R.string.action_cancel))
+                    }
+                }
+            )
         }
     }
 
@@ -342,7 +380,8 @@ fun LoginScreen(onLogin: (String, String) -> Unit) {
 @Composable
 fun HomeScreen(
     sharedPrefs: SharedPreferences,
-    onNavigateTo: (String) -> Unit
+    onNavigateTo: (String) -> Unit,
+    snackbarHostState: SnackbarHostState
 ) {
     var lastLat by rememberSaveable { mutableStateOf(sharedPrefs.getFloat("last_lat", 0f)) }
     var lastLng by rememberSaveable { mutableStateOf(sharedPrefs.getFloat("last_lng", 0f)) }
@@ -387,12 +426,25 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier.padding(20.dp)
                 ) {
-                    Text(
-                        text = "Welcome Back!",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Welcome Back!",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (lastAnomaly != null) {
+                            AssistChip(
+                                onClick = { showAiDialog = true },
+                                label = { Text("AI Active") },
+                                leadingIcon = { Icon(Icons.Default.AutoAwesome, contentDescription = null) }
+                            )
+                        }
+                    }
                     Text(
                         text = "Your safety is our priority",
                         style = MaterialTheme.typography.bodyLarge,
@@ -451,16 +503,16 @@ fun HomeScreen(
                     onClick = { onNavigateTo("profile") }
                 )
                 QuickActionCard(
-                    title = "AI",
-                    icon = Icons.Default.Lightbulb,
+                    title = "Map",
+                    icon = Icons.Default.Map,
                     color = MaterialTheme.colorScheme.tertiary,
-                    onClick = { showAiDialog = true }
+                    onClick = { onNavigateTo("map") }
                 )
             }
         }
 
         item {
-            if (lastAnomaly != null) {
+            AnimatedVisibility(visible = lastAnomaly != null, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
@@ -468,7 +520,7 @@ fun HomeScreen(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Anomaly Detected", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onErrorContainer)
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(lastAnomaly!!, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Text(lastAnomaly ?: "", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
                     }
                 }
             }
@@ -532,6 +584,7 @@ fun SafetyScoreCard(
         score >= 60 -> MaterialTheme.colorScheme.secondary
         else -> MaterialTheme.colorScheme.error
     }
+    val animatedProgress by animateFloatAsState(targetValue = score / 100f, animationSpec = tween(durationMillis = 600), label = "score")
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -564,7 +617,7 @@ fun SafetyScoreCard(
             Spacer(modifier = Modifier.height(8.dp))
             
             LinearProgressIndicator(
-                progress = score / 100f,
+                progress = animatedProgress,
                 modifier = Modifier.fillMaxWidth(),
                 color = scoreColor,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
@@ -701,6 +754,43 @@ fun SafetyScreen(sharedPrefs: SharedPreferences) {
                 color = MaterialTheme.colorScheme.tertiary,
                 onClick = { /* Handle tips */ }
             )
+        }
+    }
+}
+
+@Composable
+fun MapScreen() {
+    // Mock heatmap pins using cards; integrate Maps SDK later
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text(text = "Regional Heatmap (Mock)", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(text = "Areas with higher anomaly density appear at the top.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+        }
+        val mockAreas = listOf(
+            Triple("Kaziranga Park", 0.82f, "Wildlife zone; keep to marked trails"),
+            Triple("Shillong Peak", 0.65f, "Fog risk; avoid solo travel at night"),
+            Triple("Guwahati Riverside", 0.40f, "Generally safe; watch belongings"),
+            Triple("Tawang Monastery", 0.25f, "Safe; tourist-friendly area")
+        )
+        items(mockAreas.size) { idx ->
+            val (name, intensity, note) = mockAreas[idx]
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(name, style = MaterialTheme.typography.titleMedium)
+                        Text("Risk ${(intensity * 100).toInt()}%", color = if (intensity > 0.6f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    LinearProgressIndicator(progress = intensity, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(6.dp))
+                    Text(note, style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
     }
 }

@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">एनई ट्रैवल हेल्प</string>
+    <string name="app_subtitle">आपका सेफ्टी साथी</string>
+    <string name="welcome_title">वापसी पर स्वागत है!</string>
+    <string name="welcome_subtitle">आपकी सुरक्षा हमारी प्राथमिकता है</string>
+    <string name="login_username">उपयोगकर्ता नाम</string>
+    <string name="login_password">पासवर्ड</string>
+    <string name="login_continue">जारी रखें</string>
+    <string name="home_quick_actions">त्वरित कार्य</string>
+    <string name="home_sos">एसओएस</string>
+    <string name="home_safety">सुरक्षा</string>
+    <string name="home_profile">प्रोफ़ाइल</string>
+    <string name="home_settings">सेटिंग्स</string>
+    <string name="safety_title">सुरक्षा सुविधाएँ</string>
+    <string name="dialog_sos_title">एसओएस भेजें?</string>
+    <string name="dialog_sos_message">हम आपका स्थान आपके विश्वसनीय संपर्कों और अधिकारियों के साथ साझा करेंगे।</string>
+    <string name="action_send">भेजें</string>
+    <string name="action_cancel">रद्द करें</string>
+    <string name="ai_suggestions_title">एआई सुझाव</string>
+    <string name="action_close">बंद करें</string>
+    <string name="nav_home">होम</string>
+    <string name="nav_safety">सुरक्षा</string>
+    <string name="nav_profile">प्रोफ़ाइल</string>
+    <string name="nav_settings">सेटिंग्स</string>
+    <string name="nav_help">मदद</string>
+</resources>
